@@ -46,6 +46,14 @@ define('ROOT_PATH',     '/Users/xudianyang/PhpstormProjects/yaf.app-src');
 
 ROOT_PATH常量修改为应用的主目录
 
+define('ASSETS_URL',    'http://assets.phpboy.net/');
+
+ASSETS_URL常量暂用于程序的资源文件目录，如：js,css等
+
+define('BACKEND_URL',   'http://backend.phpboy.net/');
+
+BACKEND_URL常量表示程序的入口文件，应指向public
+
 ```php
 
 #!/usr/bin/env /Users/xudianyang/Server/php-5.4/bin/php
@@ -231,7 +239,7 @@ function stop()
 
 ```
 
-
+未完待续...
 
 
 
