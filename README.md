@@ -52,7 +52,7 @@ ASSETS_URL常量暂用于程序的资源文件目录，如：js,css等
 
 define('BACKEND_URL',   'http://backend.phpboy.net/');
 
-BACKEND_URL常量表示程序的入口文件，应指向public
+BACKEND_URL常量表示应用域名，应指向public
 
 ```php
 
