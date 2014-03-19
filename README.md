@@ -35,9 +35,20 @@
 由于PHP+Redis实现的消息队列，能相当易于部署与维护，对于小型应用来说此种模式的消息队列足矣解决问题。故这里将[`php-resque`](https://github.com/chrisboulton/php-resque)与Yaf进行了整合，并修改部分代码。最终的目的是能够使其与Yaf的命令行模式结合，完成后台执行PHP脚本。关于php-resque的更多介绍请参考：[用PHP实现守护进程任务后台运行与多线程](http://avnpc.com/pages/run-background-task-by-php-resque)
 
 #####1.Worker启动脚本
+
+修改./application/library/Resque/bin/Yaf-cli
+
+!/usr/bin/env /Users/xudianyang/Server/php-5.4/bin/php
+
+修改为php解释器的对应路径
+
+define('ROOT_PATH',     '/Users/xudianyang/PhpstormProjects/yaf.app-src');
+
+ROOT_PATH常量修改为应用的主目录
+
 ```php
 
-\#!/usr/bin/env /Users/xudianyang/Server/php-5.4/bin/php
+#!/usr/bin/env /Users/xudianyang/Server/php-5.4/bin/php
 
 <?php
 define('DS',            '/');
@@ -173,6 +184,51 @@ function stop()
     }
 }
 ?>
+```
+
+#######启动worker
+
+`php Yaf-cli start`
+
+支持的参数
+
+* `--host=Redis主机（默认为127.0.0.1）` 
+
+* `--port=Redis端口（默认为6379）` 
+
+* `--prefix=Redis Key前缀`
+
+* `--database=持久化数据库编号`
+
+* `--queue=队列名称（默认*,监听所有的工作任务）`
+
+* `--process=进程数（默认1，可以开启多个减少延迟）`
+
+* `--blocking=是否阻塞(0、1)`
+
+* `--interval=轮循间隔（默认1秒）`
+
+* `--pid-path=PHP进程ID文件路径（默认/tmp/resque）`
+	
+#######关闭worker
+
+`php Yaf-cli stop`
+
+支持的参数
+
+* `--queue=队列名称（默认*,监听所有的工作任务）`
+
+#######示例
+
+```bash
+
+➜ application/library/Resque/bin>php Yaf-cli start --process=5 --queue=log
+[notice] Starting Worker xudianyang-mac.lan:2447:log
+[notice] Starting Worker xudianyang-mac.lan:2446:log
+[notice] Starting Worker xudianyang-mac.lan:2448:log
+[notice] Starting Worker xudianyang-mac.lan:2450:log
+[notice] Starting Worker xudianyang-mac.lan:2449:log
+
 ```
 
 
