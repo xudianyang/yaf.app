@@ -138,7 +138,6 @@ application.xhprof.ignored_functions.1=call_user_func_array
 <?php
 namespace Index;
 
-use Core\Loader;
 use Cache\CachePool;
 
 return array(
