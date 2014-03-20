@@ -29,7 +29,6 @@
 extension=yaf.so
 yaf.cache_config=1
 yaf.use_namespace=1
-
 ```
 
 `xhprof.ini`
@@ -37,21 +36,18 @@ yaf.use_namespace=1
 ```
 extension=xhprof.so
 xhprof.output_dir=/Users/xudianyang/Server/var/run/xhprof
-
 ```
 
 `msgpack.ini`
 
 ```
 extension=msgpack.so
-
 ```
 
 `redis.ini`
 
 ```
 extension=redis.so
-
 ```
 
 `yar`
@@ -72,6 +68,115 @@ extension=yar.so
 * 异常捕获
 
 ##使用说明
+
+###配置文件机制
+
+####全局配置app.ini
+
+yaf application的ini配置说明请参考[yaf手册](http://cn2.php.net/manual/zh/yaf.appconfig.php)或者相关文档，下面是本人的配置：
+
+```
+[common]
+application.debug=1
+application.directory=ROOT_PATH "/" APP_NAME "/"
+application.bootstrap=ROOT_PATH "/" APP_NAME "/" Bootstrap.php
+application.dispatcher.defaultModule="index"
+application.dispatcher.defaultController="index"
+application.dispatcher.defaultAction="index"
+application.dispatcher.throwException=1
+application.modules="Index,Log"
+application.view.ext="phtml"
+
+[product:common]
+;memcached
+application.memcached.0.host=127.0.0.1
+application.memcached.0.port=11211
+application.memcached.0.weight=50
+application.memcached.1.host=127.0.0.1
+application.memcached.1.port=11212
+application.memcached.1.weight=50
+;database
+application.database.driver="Pdo_mysql"
+application.database.host="127.0.0.1"
+application.database.port=3306
+application.database.username="root"
+application.database.password="123123"
+application.database.dbname="test"
+application.database.charset="utf8"
+;log queue
+application.queue.log.switch=1
+application.queue.log.tablename=app_error_log
+application.queue.log.name=log
+application.queue.log.module=Log
+application.queue.log.controller=Indexjob
+application.queue.log.action=Index
+;queue
+application.queue.redis.host=127.0.0.1
+application.queue.redis.port=6379
+;xhprof
+application.xhprof.open=1
+application.xhprof.namespace=yaf-app
+;XHPROF_FLAGS_NO_BUILTINS | XHPROF_FLAGS_CPU | XHPROF_FLAGS_MEMORY
+application.xhprof.flags= XHPROF_FLAGS_CPU | XHPROF_FLAGS_MEMORY
+application.xhprof.ignored_functions.0=call_user_func
+application.xhprof.ignored_functions.1=call_user_func_array
+```
+其中：
+
+* memcached段为memcached的连接信息
+* database段为默认数据库连接信息
+* queue为消息队列配置，queue.log为日志队列的配置，包括日志数据据表名，日志的工作任务Action
+* queue.redis为消息队列储存的redis连接信息
+* xhprof为PHP的分层性能测量分析器的配置信息，默认开启性能分析，会根据xhprof.ini的配置，将分析数据写入到指定目录。
+
+####模块配置文件Import.php
+
+每个模块目录下都可以建立一个config文件夹，在其中创建Import.php，写书模块的一些特殊配置信息，如：
+
+```php
+
+<?php
+namespace Index;
+
+use Core\Loader;
+use Cache\CachePool;
+
+return array(
+    'database_config' => array(
+        'driver'    => 'Pdo_mysql',
+        'host'      => '127.0.0.1',
+        'port'      => 3306,
+        'username'  => 'root',
+        'password'  => '123123',
+        'dbname'    => 'yaf_app',
+        'charset'   => 'utf8',
+    ),
+
+    'expire'      => 3600,
+    'redis'       => function() {
+            $storage = CachePool::factory(
+                array(
+                    'storage'   => 'redis',
+                    'namespace' => 'auth:',
+                )
+            );
+            CachePool::register($storage);
+            CachePool::get()->setResource(
+                array(
+                    'host' => '127.0.0.1',
+                    'port' => 6379,
+                )
+            );
+            CachePool::get()->getResource();
+            return CachePool::get();
+    },
+);
+```
+
+上述配置文件会自动载入，并将其写入到`Yaf\Registry::get('config')`和`Yaf\Registry::get('mount')`两个全局对象中；两者的差别是config代表常量的配置，mount代表可回调的配置（callable），如上述的redis配置为一个匿名函数，当使用是通过`Yaf\Registry::get('mount')->get('redis')`可以得到回调的返回对象，多次`Yaf\Registry::get('mount')->get('redis')`调用只会执行一次匿名函数。
+
+另外`Yaf\Registry::get('config')`是`Yaf\Config\Simple`类的实例对象，`Yaf\Registry::get('mount')`是`MountManager\MountManager`类的实例对象。在进行`Core\Factory::db()`时，`database_config`会覆盖全局配置`database`。
+
 
 ###消息队列
 
@@ -196,7 +301,7 @@ CREATE TABLE IF NOT EXISTS `app_error_log` (
 
 ######2.使用异常日志——创建日志工作任务
 
-在上述开启了worker之后，我们就可以入队列与出队列，完成工作任务了。本人在使用php-resque与Yaf时，将Yaf命令行路由分发与php-resque的工作任务(job)结合起来使用，即写消息队列的工作任务代码就和写其他正常的Action一样，只不过controller继承内置的ServiceJob类。
+在上述开启了worker之后，我们就可以入队列与出队列，完成工作任务了。本人在使用php-resque与Yaf时，将Yaf命令行路由分发与php-resque的工作任务(job)结合起来使用，即写消息队列的工作任务代码就和写其他正常的Action一样，只不过controller继承内置的\Core\ServiceJob类。
 
 示例代码：./applicaiton/modules/Log/controllers/Indexjob.php
 
@@ -220,7 +325,6 @@ class IndexJobController extends ServiceJob
         $log->add($data);
     }
 }
-
 ```
 
 ######3.使用异常日志——消息入队列
@@ -276,8 +380,6 @@ if (substr($_SERVER['HTTP_USER_AGENT'], 0, 11) === 'PHP Yar Rpc') {
         }
     }
 }
-
-
 ```
 
 可以看到所有异常都会被捕获，在开启日志队列时，会通过ErrorLog类的errorLog方法进行入队列操作。
@@ -322,7 +424,6 @@ class ErrorLog
         }
     }
 }
-
 ```
 
 重点在
@@ -330,7 +431,6 @@ class ErrorLog
 ```php
 Resque::setBackend($server, $database);
 Resque::enqueue($queue_name, 'Resque\Job\YafCLIRequest', $args, true);
-
 ```
 
 ######4.使用异常日志——执行工作任务
@@ -372,10 +472,157 @@ class YafCLIRequest
         }
     }
 }
-
 ```
 
 worker进程在检测队列时，如果队列不为空，就会依次进行出队列的操作，运行YafCLIRequest::perform()方法，通过Yaf命令行下的路由分发，完成工作任务。
+
+
+######5.使用异常日志——触发异常
+
+./application/modules/Index/controllers/Index.php
+
+```php
+<?php
+
+use Yaf\Controller_Abstract;
+use Yaf\Dispatcher;
+use Yar\YarClient;
+class IndexController extends Controller_Abstract
+{
+    public function indexAction()
+    {
+        // 空的，加载一下模板
+    }
+
+    public function testYarApiAction()
+    {
+        Dispatcher::getInstance()->disableView();
+        $client = new YarClient(
+            array(
+                'module' => 'index',
+                'controller' => 'demoapi',
+                'action' => 'getdata',
+            ),
+            array('args' => 'some parameters', 'format' => 'json')
+        );
+        $data = $client->api();
+        print_r($data);
+    }
+
+    public function testLogAction()
+    {
+        // 空的，没有对应的模板，此处抛出的异常应被log/indexjob/index捕获并写入相应的储存介质
+    }
+}
+```
+
+看到testLogAction，当访问：http://backend.phpboy.net/index/index/testlog时，就会抛出异常，因为程序找不到与之对应的模板文件。
+
+```
+Failed opening template /Users/xudianyang/PhpstormProjects/yaf.app-src/application/Modules/Index/Views/index/testlog.phtml: No such file or directory
+```
+查看日志表，如果数据库连接信息配置得当，就会出现一条日志信息。
+
+###远程调用(Yar轻量级RPC)
+
+大家都知道，在以前的PHP开源或者闭源程序中，经常我们看到A模块直接加载B模块的Model，从而使得这A、B两个模块之间耦合度高，没有办法拆分或者单独部署，这样整个项目的维护与扩展就越来越困难。为了解决这样的问题，本人采用Yar+Yaf的路由分发实现远程调用，完成模块之间的数据调用，并且我们可以和写普通Action一样导出API，只需controller继承Core\ServiceApi内置类。
+
+
+#####1.导出API
+
+./application/modules/Index/controllers/Demoapi.php
+
+```php
+<?php
+
+use Core\ServiceApi;
+
+class DemoApiController extends ServiceApi
+{
+    public function init()
+    {
+        parent::init();
+    }
+
+    public function getDataAction()
+    {
+        $this->sendOutput("这是通过远程调用返回的数据(Yar)传递的参数: args => " . $this->getRequest()->getParam('args'));
+    }
+}
+```
+
+导出的API需要正常输出相应的格式数据。
+
+#####2.调用API
+
+./application/modules/Index/conrollers/Index.php
+
+```php
+<?php
+
+use Yaf\Controller_Abstract;
+use Yaf\Dispatcher;
+use Yar\YarClient;
+class IndexController extends Controller_Abstract
+{
+    public function indexAction()
+    {
+        // 空的，加载一下模板
+    }
+
+    public function testYarApiAction()
+    {
+        Dispatcher::getInstance()->disableView();
+        $client = new YarClient(
+            array(
+                'module' => 'index',
+                'controller' => 'demoapi',
+                'action' => 'getdata',
+            ),
+            array('args' => 'some parameters', 'format' => 'json')
+        );
+        $data = $client->api();
+        print_r($data);
+    }
+
+    public function testLogAction()
+    {
+        // 空的，没有对应的模板，此处抛出的异常应被log/indexjob/index捕获并写入相应的储存介质
+    }
+}
+```
+
+看到`testYarApiAction`，实例化一个Yar\YarClient类。
+
+其中第一个参数代表导出的API的MVC信息，这里为:
+
+```php
+array(
+	'module' => 'index',
+	'controller' => 'demoapi',
+	'action' => 'getdata',
+)
+```
+
+对应上述导出的API
+
+其中第二个参数代表请求相应的参数，args代表传递的所有参数，format为请求间传递数据的格式，默认为json，还可以为serialize、plain
+
+最后调用Yar\YarClient类实例对象的api方法，完成请求并返回相应数据。
+
+访问：http://backend.phpboy.net/index/index/testyarapi
+
+输出：
+
+```
+这是通过远程调用返回的数据(Yar)传递的参数: args => some parameters
+```
+
+
+
+
+
+
 
 
 
