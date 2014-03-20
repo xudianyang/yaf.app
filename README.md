@@ -17,6 +17,49 @@
 * XHProf-0.9.4
 * phpredis-2.2.4
 * Yar-1.2.1
+* pcntl
+* msgpack-0.5.5
+
+ 
+####INI配置
+
+`yaf.ini`
+
+```
+extension=yaf.so
+yaf.cache_config=1
+yaf.use_namespace=1
+
+```
+
+`xhprof.ini`
+
+```
+extension=xhprof.so
+xhprof.output_dir=/Users/xudianyang/Server/var/run/xhprof
+
+```
+
+`msgpack.ini`
+
+```
+extension=msgpack.so
+
+```
+
+`redis.ini`
+
+```
+extension=redis.so
+
+```
+
+`yar`
+
+```
+extension=yar.so
+```
+
 
 ##特性
 
@@ -212,30 +255,7 @@ use Resque\Resque;
 use Sender\Http as SenderHttp;
 
 if (substr($_SERVER['HTTP_USER_AGENT'], 0, 11) === 'PHP Yar Rpc') {
-    class Service
-    {
-        public function api($module, $controller, $action, $parameters)
-        {
-            try {
-                $app = new Application(INI_PATH, 'product');
-                $request = new RequestSimple('API', $module, $controller, $action, $parameters);
-                $response = $app->bootstrap()->getDispatcher()->dispatch($request);
-                return $response->getBody();
-            } catch(Exception $e) {
-                if (Application::app()->getConfig()->application->queue->log->switch) {
-                    $error = new ErrorLog($e, Dispatcher::getInstance()->getRequest());
-                    $error->errorLog();
-                }
-                $error = explode(ES, $e->getMessage(), 2);
-                if (isset($error[1])) {
-                    return $error[1];
-                }
-            }
-        }
-    }
-
-    $server = new Yar_Server(new Service());
-    $server->handle();
+	//......
 } else {
     try {
         $app = new Application(INI_PATH, 'product');
@@ -260,33 +280,7 @@ if (substr($_SERVER['HTTP_USER_AGENT'], 0, 11) === 'PHP Yar Rpc') {
 
 ```
 
-可以看到
-
-```php
-
-try {
-        $app = new Application(INI_PATH, 'product');
-        $app->bootstrap()->run();
-    } catch(Exception $e) {
-        $sender = new SenderHttp();
-        if (Application::app()->getConfig()->application->debug) {
-            $sender->setStatus(503, 'Exception: '.$e->getMessage());
-        } else {
-            $sender->setStatus(503, 'Exception');
-        }
-        $sender->send();
-        if (Application::app()->getConfig()->application->queue->log->switch) {
-            $error = new ErrorLog($e, Dispatcher::getInstance()->getRequest());
-            $error->errorLog();
-        } else {
-            echo $e->getMessage();
-        }
-    }
-
-
-```
-
-所有异常都会被捕获，在开启日志队列时，会通过ErrorLog类的errorLog方法进行入队列操作。
+可以看到所有异常都会被捕获，在开启日志队列时，会通过ErrorLog类的errorLog方法进行入队列操作。
 
 ```php
 <?php
