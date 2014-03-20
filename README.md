@@ -1,6 +1,6 @@
 #Yaf.app
 
-一个基于Yaf MVC的PHP应用程序框架。
+一个基于Yaf MVC的PHP应用程序框架，在工作中使用Yaf加了一些特定程序元素，需要的自取，此项目并非使用Yaf的标准，是个人使用Yaf的总结，用得不对的地方请大神勿喷，并告知小弟，不胜感激。
 
 学习与使用Yaf的PHPer有许多，每个人的“姿势”都不尽相同，这是一种好现象，因为说明都动脑了。本项目没有多少创新，很多程序设计的思想与框架支持的功能都来源于其他公开或非公开项目。
 
@@ -17,8 +17,8 @@
 * XHProf-0.9.4
 * phpredis-2.2.4
 * Yar-1.2.1
-* pcntl
 * msgpack-0.5.5
+* pcntl
 
  
 ####INI配置
@@ -173,7 +173,7 @@ return array(
 );
 ```
 
-上述配置文件会自动载入，并将其写入到`Yaf\Registry::get('config')`和`Yaf\Registry::get('mount')`两个全局对象中；两者的差别是config代表常量的配置，mount代表可回调的配置（callable），如上述的redis配置为一个匿名函数，当使用是通过`Yaf\Registry::get('mount')->get('redis')`可以得到回调的返回对象，多次`Yaf\Registry::get('mount')->get('redis')`调用只会执行一次匿名函数。
+上述配置文件会自动载入，并将其写入到`Yaf\Registry::get('config')`和`Yaf\Registry::get('mount')`两个全局对象中；两者的差别是config代表常量的配置，mount代表可回调的配置（callable），如上述的redis配置为一个匿名函数，当使用时通过`Yaf\Registry::get('mount')->get('redis')`可以得到回调的返回对象，多次`Yaf\Registry::get('mount')->get('redis')`调用只会执行一次匿名函数。
 
 另外`Yaf\Registry::get('config')`是`Yaf\Config\Simple`类的实例对象，`Yaf\Registry::get('mount')`是`MountManager\MountManager`类的实例对象。在进行`Core\Factory::db()`时，`database_config`会覆盖全局配置`database`。
 
@@ -251,6 +251,8 @@ spl_autoload_register(array($loader, 'autoload'));
 * `--interval=轮循间隔（默认1秒）`
 
 * `--pid-path=PHP进程ID文件路径（默认/tmp/resque）`
+
+注意：需要php在命令行下运行支持exec函数，所以开启worker时先把exec函数打开，启动worker之后再关闭exec函数。
 	
 #######关闭worker
 
@@ -516,7 +518,11 @@ class IndexController extends Controller_Abstract
 }
 ```
 
-看到testLogAction，当访问：http://backend.phpboy.net/index/index/testlog时，就会抛出异常，因为程序找不到与之对应的模板文件。
+看到testLogAction，当访问：
+
+http://backend.phpboy.net/index/index/testlog
+
+就会抛出异常，因为程序找不到与之对应的模板文件。
 
 ```
 Failed opening template /Users/xudianyang/PhpstormProjects/yaf.app-src/application/Modules/Index/Views/index/testlog.phtml: No such file or directory
@@ -606,18 +612,58 @@ array(
 
 对应上述导出的API
 
-其中第二个参数代表请求相应的参数，args代表传递的所有参数，format为请求间传递数据的格式，默认为json，还可以为serialize、plain
+其中第二个参数代表请求相应的参数，args代表传递的所有参数，format为请求间传递数据的格式，默认为json，还可以为serialize、plain。
 
 最后调用Yar\YarClient类实例对象的api方法，完成请求并返回相应数据。
 
 访问：http://backend.phpboy.net/index/index/testyarapi
 
-输出：
+输出
 
 ```
 这是通过远程调用返回的数据(Yar)传递的参数: args => some parameters
 ```
 
+###XHProf的使用
+
+在开启PHP性能分析时，可以将每次请求的分析数据保存到`xhprof.output_dir`目录中，这里只保存了分析数据，如果要查看相信的分析信息，需要xhprof_html和xhprof_lib，这是一个PHP实现的界面，使得查看XHProf分析结果变得更加容易。更多XHProf的详细介绍：[PHP性能分析工具xhprof介绍、安装、使用说明](http://www.phpboy.net/web/php/839.html)
+
+另外需要说明的是要修改xhprof_lib/utils/xhprof_lib.php中
+
+```php
+function xhprof_param_init($params) {
+  /* Create variables specified in $params keys, init defaults */
+  foreach ($params as $k => $v) {
+    switch ($v[0]) {
+    case XHPROF_STRING_PARAM:
+      $p = xhprof_get_string_param($k, $v[1]);
+      break;
+    case XHPROF_UINT_PARAM:
+      $p = xhprof_get_uint_param($k, $v[1]);
+      break;
+    case XHPROF_FLOAT_PARAM:
+      $p = xhprof_get_float_param($k, $v[1]);
+      break;
+    case XHPROF_BOOL_PARAM:
+      $p = xhprof_get_bool_param($k, $v[1]);
+      break;
+    default:
+      xhprof_error("Invalid param type passed to xhprof_param_init: "
+                   . $v[0]);
+      exit();
+    }
+
+    if ($k === 'run') {
+      // 这里需要改动
+      //$p = implode(',', array_filter(explode(',', $p), 'ctype_xdigit'));
+      $p = implode(',', explode(',', $p));
+    }
+
+    // create a global variable using the parameter name.
+    $GLOBALS[$k] = $p;
+  }
+}
+```
 
 
 
