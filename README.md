@@ -127,7 +127,7 @@ spl_autoload_register(array($loader, 'autoload'));
 
 #####2.使用消息队列记录程序异常日志
 
-#######1.初始化异常表结构
+######1.初始化异常表结构
 
 ```sql
 CREATE TABLE IF NOT EXISTS `app_error_log` (
@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS `app_error_log` (
 
 ```
 
-#######2.使用异常日志——创建日志工作任务
+######2.使用异常日志——创建日志工作任务
 
 在上述开启了worker之后，我们就可以入队列与出队列，完成工作任务了。本人在使用php-resque与Yaf时，将Yaf命令行路由分发与php-resque的工作任务(job)结合起来使用，即写消息队列的工作任务代码就和写其他正常的Action一样，只不过controller继承内置的ServiceJob类。
 
@@ -180,7 +180,7 @@ class IndexJobController extends ServiceJob
 
 ```
 
-#######3.使用异常日志——消息入队列
+######3.使用异常日志——消息入队列
 
 示例代码：./public/index.php
 
@@ -339,7 +339,7 @@ Resque::enqueue($queue_name, 'Resque\Job\YafCLIRequest', $args, true);
 
 ```
 
-#######4.使用异常日志——执行工作任务
+######4.使用异常日志——执行工作任务
 
 ./application/library/Resque/Job/YafCLIRequest.php
 
