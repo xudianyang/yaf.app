@@ -77,121 +77,7 @@ use Psr\Log\LogLevel;
 $loader = InternalLoader::getInstance(ROOT_PATH . DS . APP_NAME . DS . 'library');
 spl_autoload_register(array($loader, 'autoload'));
 
-$action = $_SERVER['argv'][1];
-$parameters = array_slice($_SERVER['argv'], 2);
-$params = array();
-foreach ($parameters as $parameter) {
-    $param = explode('=', $parameter);
-    foreach ($param as $one) {
-        $params[] = $one;
-    }
-}
-
-$num_params = count($params);
-if ($num_params % 2 != 0) {
-    $result = "Setup Wrong Parameter, Please Check!";
-    echo $result, "\n";
-    return;
-}
-
-$run_params = array();
-for ($i = 0; $i < $num_params; $i+=2) {
-    $param = substr($params[$i], 2);
-    $run_params[$param] = $params[$i + 1];
-}
-
-if (empty($run_params['queue'])) {
-    $run_params['queue'] = '*';
-}
-
-$run_params['host']      = isset($run_params['host']) ? $run_params['host'] : '127.0.0.1';
-$run_params['port']      = isset($run_params['port']) ? (int)$run_params['port'] : '6379';
-$run_params['database']  = isset($run_params['database']) ? (int)$run_params['database'] : 0;
-$run_params['log_level'] = isset($run_params['log-level']) ? (boolean)$run_params['log-level'] : false;
-$run_params['blocking']  = isset($run_params['blocking']) ? (boolean) $run_params['blocking'] : false;
-$run_params['interval']  = isset($run_params['interval']) ? (int) $run_params['interval'] : 1;
-$run_params['process']   = isset($run_params['process']) ? (int) $run_params['process'] : 1;
-$run_params['pid_path']  = isset($run_params['pid-path']) ? $run_params['pid-path'] : '/tmp/resque/';
-extract($run_params);
-
-if ($action == 'start') {
-    start();
-} else if ($action == 'stop') {
-    stop();
-}
-
-function start()
-{
-    global $host, $port, $database, $log_level, $process, $logger, $queue, $pid_path, $interval, $blocking;
-    
-    Resque::setBackend($host . ':' . $port, $database);
-    $logger = new Log($log_level);
-    if (isset($prefix)) {
-        $logger->log(LogLevel::INFO, 'Prefix Set To {prefix}', array('prefix' => $prefix));
-        Redis::prefix($prefix);
-    }
-
-    for ($i = 0; $i < $process; ++$i) {
-        $pid = Resque::fork();
-        if ($pid < 0) {
-            $logger->log(LogLevel::EMERGENCY, 'Could Not fork Worker {process}', array('process' => $i));
-            $result = 'Running Error!';
-            echo $result, "\n";
-            return;
-        }  else if ($pid == 0) {
-            $sid = posix_setsid();
-            $queues = explode(',', $queue);
-            if ($sid < 0) {
-                $logger->log(LogLevel::EMERGENCY, 'Could Not Make The Current Process A Session Leader');
-                $result = 'Running Error!';
-                echo $result, "\n";
-                return;
-            }
-
-            if (is_dir($pid_path)) {
-                foreach ($queues as $queue) {
-                    $pidfile = rtrim($pid_path, DS).DS.$queue."." . posix_getpid();
-                    if (!file_put_contents($pidfile, posix_getpid())) {
-                        $logger->log(LogLevel::EMERGENCY, 'Could Not Create Pid File, Permission Denied');
-                        $result = 'Running Error!';
-                        echo $result, "\n";
-                        return;
-                    }
-                }
-            } else {
-                $logger->log(LogLevel::EMERGENCY, 'Could Not Create Pid File, {pidpath} Directory Not Exists', array('pidpath' => $pid_path));
-                $result = 'Running Error!';
-                echo $result, "\n";
-                return;
-            }
-
-            $worker = new Worker($queues);
-            $worker->setLogger($logger);
-            $logger->log(LogLevel::NOTICE, 'Starting Worker {worker}', array('worker' => $worker));
-            $worker->work($interval, $blocking);
-            break;
-        }
-    }
-    if (isset($pid) && $pid > 0) {
-        exit(0);
-    }
-}
-
-
-function stop()
-{
-    global $queue, $pid_path;
-    $queues = explode(',', $queue);
-    foreach ($queues as $queue) {
-        $pid_files = glob(rtrim($pid_path, DS).DS.$queue."*");
-        foreach($pid_files as $pid_file) {
-            $pid = file_get_contents($pid_file);
-            posix_kill($pid, SIGTERM);
-            unlink($pid_file);
-        }
-    }
-}
-?>
+//......
 ```
 
 #######启动worker
@@ -226,7 +112,7 @@ function stop()
 
 * `--queue=队列名称（默认*,监听所有的工作任务）`
 
-#######示例
+#######启动示例
 
 ```bash
 
@@ -239,7 +125,264 @@ function stop()
 
 ```
 
-未完待续...
+#####2.使用消息队列记录程序异常日志
+
+#######1.初始化异常表结构
+
+```sql
+CREATE TABLE IF NOT EXISTS `app_error_log` (
+  `logid` int(10) NOT NULL AUTO_INCREMENT,
+  `host` char(50) DEFAULT NULL,
+  `uri` char(255) DEFAULT NULL,
+  `query` char(255) DEFAULT NULL,
+  `module` char(50) DEFAULT NULL,
+  `controller` char(255) DEFAULT NULL,
+  `action` char(50) DEFAULT NULL,
+  `params` text,
+  `exception` char(255) DEFAULT NULL,
+  `code` int(4) DEFAULT NULL,
+  `message` varchar(1000) DEFAULT NULL,
+  `file` varchar(500) DEFAULT NULL,
+  `line` int(4) DEFAULT NULL,
+  `timestamp` int(10) DEFAULT NULL,
+  `datetime` char(25) DEFAULT NULL,
+  PRIMARY KEY (`logid`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1
+
+```
+
+#######2.使用异常日志——创建日志工作任务
+
+在上述开启了worker之后，我们就可以入队列与出队列，完成工作任务了。本人在使用php-resque与Yaf时，将Yaf命令行路由分发与php-resque的工作任务(job)结合起来使用，即写消息队列的工作任务代码就和写其他正常的Action一样，只不过controller继承内置的ServiceJob类。
+
+示例代码：./applicaiton/modules/Log/controllers/Indexjob.php
+
+```php
+
+<?php
+
+use Core\ServiceJob;
+use Log\LogModel;
+
+class IndexJobController extends ServiceJob
+{
+    public function init()
+    {
+        parent::init();
+    }
+    public function indexAction()
+    {
+        $data = $this->getRequest()->getParams();
+        $log = new LogModel();
+        $log->add($data);
+    }
+}
+
+```
+
+#######3.使用异常日志——消息入队列
+
+示例代码：./public/index.php
+
+```php
+
+<?php
+/**
+ * Yaf.app Framework
+ *
+ * @author xudianyang<120343758@qq.com>
+ * @copyright Copyright (c) 2014 (http://www.phpboy.net)
+ */
+
+define('DS',            '/');
+define('ES',            'EXCEPTION-STDERR');
+define('APP_NAME',      'application');
+define('ROOT_PATH',      realpath(dirname(__FILE__).'/../'));
+define('INI_PATH',       ROOT_PATH.DS.'conf'.DS.'app.ini');
+
+define('ASSETS_URL',    'http://assets.phpboy.net/');
+define('BACKEND_URL',   'http://backend.phpboy.net/');
+
+use Yaf\Application;
+use Yaf\Dispatcher;
+use Yaf\Request\Simple as RequestSimple;
+use Core\ErrorLog;
+use Exception as Exception;
+use Resque\Resque;
+use Sender\Http as SenderHttp;
+
+if (substr($_SERVER['HTTP_USER_AGENT'], 0, 11) === 'PHP Yar Rpc') {
+    class Service
+    {
+        public function api($module, $controller, $action, $parameters)
+        {
+            try {
+                $app = new Application(INI_PATH, 'product');
+                $request = new RequestSimple('API', $module, $controller, $action, $parameters);
+                $response = $app->bootstrap()->getDispatcher()->dispatch($request);
+                return $response->getBody();
+            } catch(Exception $e) {
+                if (Application::app()->getConfig()->application->queue->log->switch) {
+                    $error = new ErrorLog($e, Dispatcher::getInstance()->getRequest());
+                    $error->errorLog();
+                }
+                $error = explode(ES, $e->getMessage(), 2);
+                if (isset($error[1])) {
+                    return $error[1];
+                }
+            }
+        }
+    }
+
+    $server = new Yar_Server(new Service());
+    $server->handle();
+} else {
+    try {
+        $app = new Application(INI_PATH, 'product');
+        $app->bootstrap()->run();
+    } catch(Exception $e) {
+        $sender = new SenderHttp();
+        if (Application::app()->getConfig()->application->debug) {
+            $sender->setStatus(503, 'Exception: '.$e->getMessage());
+        } else {
+            $sender->setStatus(503, 'Exception');
+        }
+        $sender->send();
+        if (Application::app()->getConfig()->application->queue->log->switch) {
+            $error = new ErrorLog($e, Dispatcher::getInstance()->getRequest());
+            $error->errorLog();
+        } else {
+            echo $e->getMessage();
+        }
+    }
+}
+
+
+```
+
+可以看到
+
+```php
+
+try {
+        $app = new Application(INI_PATH, 'product');
+        $app->bootstrap()->run();
+    } catch(Exception $e) {
+        $sender = new SenderHttp();
+        if (Application::app()->getConfig()->application->debug) {
+            $sender->setStatus(503, 'Exception: '.$e->getMessage());
+        } else {
+            $sender->setStatus(503, 'Exception');
+        }
+        $sender->send();
+        if (Application::app()->getConfig()->application->queue->log->switch) {
+            $error = new ErrorLog($e, Dispatcher::getInstance()->getRequest());
+            $error->errorLog();
+        } else {
+            echo $e->getMessage();
+        }
+    }
+
+
+```
+
+所有异常都会被捕获，在开启日志队列时，会通过ErrorLog类的errorLog方法进行入队列操作。
+
+```php
+<?php
+/**
+ * Yaf.app Framework
+ *
+ * @author xudianyang<120343758@qq.com>
+ * @copyright Copyright (c) 2014 (http://www.phpboy.net)
+ */
+
+namespace Core;
+
+use Exception as Exception;
+use Yaf\Request_Abstract;
+use Yaf\Application;
+use Resque\Resque;
+
+class ErrorLog
+{
+// ......
+    public function errorLog()
+    {
+        if (isset(Application::app()->getConfig()->application->queue)
+            && isset(Application::app()->getConfig()->application->queue->redis)
+            && isset(Application::app()->getConfig()->application->queue->log)
+        ) {
+            $redis_config = Application::app()->getConfig()->application->queue->redis->toArray();
+            $server   = $redis_config['host'] . ':'. $redis_config['port'];
+            $database = isset($redis_config['database']) ? $redis_config['database'] : null;
+            Resque::setBackend($server, $database);
+            $args = array(
+                'module'     => Application::app()->getConfig()->application->queue->log->module,
+                'controller' => Application::app()->getConfig()->application->queue->log->controller,
+                'action'     => Application::app()->getConfig()->application->queue->log->action,
+                'args'       => $this->toArray(),
+            );
+            $queue_name = Application::app()->getConfig()->application->queue->log->name;
+            Resque::enqueue($queue_name, 'Resque\Job\YafCLIRequest', $args, true);
+        }
+    }
+}
+
+```
+
+重点在
+
+```php
+Resque::setBackend($server, $database);
+Resque::enqueue($queue_name, 'Resque\Job\YafCLIRequest', $args, true);
+
+```
+
+#######4.使用异常日志——执行工作任务
+
+./application/library/Resque/Job/YafCLIRequest.php
+
+```php
+
+<?php
+/**
+ * Yaf.app Framework
+ *
+ * @author xudianyang<120343758@qq.com>
+ * @copyright Copyright (c) 2014 (http://www.phpboy.net)
+ */
+
+namespace Resque\Job;
+
+use Yaf\Application;
+use Yaf\Dispatcher;
+use Yaf\Request\Simple as RequestSimple;
+use Core\ErrorLog;
+use Resque\Resque;
+use Exception as Exception;
+
+class YafCLIRequest
+{
+    public function perform()
+    {
+        try {
+            $app = new Application(INI_PATH);
+            $request = new RequestSimple('CLI', $this->args['module'], $this->args['controller'], $this->args['action'], $this->args['args']);
+            $app->bootstrap()->getDispatcher()->dispatch($request);
+        } catch(Exception $e) {
+            if (Application::app()->getConfig()->application->queue->log->switch) {
+                $error = new ErrorLog($e, Dispatcher::getInstance()->getRequest());
+                $error->errorLog();
+            }
+        }
+    }
+}
+
+```
+
+worker进程在检测队列时，如果队列不为空，就会依次进行出队列的操作，运行YafCLIRequest::perform()方法，通过Yaf命令行下的路由分发，完成工作任务。
+
 
 
 
