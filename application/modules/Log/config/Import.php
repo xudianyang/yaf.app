@@ -1,4 +1,16 @@
 <?php
+/**
+ * Yaf.app Framework
+ *
+ * Import.php
+ *
+ * 日志队列模块配置文件
+ *
+ * @author xudianyang<120343758@qq.com>
+ * @copyright Copyright (c) 2014 (http://www.phpboy.net)
+ * @package Log
+ */
+
 namespace Log;
 
 return array(

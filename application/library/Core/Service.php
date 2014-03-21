@@ -19,31 +19,76 @@ use Output\FormatOutput;
 use PhpSecure\Crypt\AES;
 use Console\Console;
 
+/**
+ * Class Service
+ *
+ * 普通服务的Controller基类
+ *
+ * @package Core
+ */
 abstract class Service extends Controller_Abstract
 {
-    public $output_format, $request_http;
+    /**
+     * @var string
+     */
+    public $output_format;
 
+    /**
+     * @var string
+     */
+    public $request_http;
+
+    /**
+     * Service初始化
+     */
     public function init() {
         $this->request_http = new Request_Http();
         $this->output_format = $this->request_http->getPost('format');
         Dispatcher::getInstance()->disableView();
     }
 
+    /**
+     * 返回当前模块名
+     *
+     * @access protected
+     * @return string
+     */
     protected function getModule()
     {
         return $this->getRequest()->module;
     }
 
+    /**
+     * 返回当前控制器名
+     *
+     * @access protected
+     * @return string
+     */
     protected function getController()
     {
         return $this->getRequest()->controller;
     }
 
+    /**
+     * 返回当前动作名
+     *
+     * @access protected
+     * @return string
+     */
     protected function getAction()
     {
         return $this->getRequest()->action;
     }
 
+    /**
+     * 标准响应输出
+     *
+     * @access protected
+     * @param $response 响应正文
+     * @param string $format 响应输出数据格式
+     * @param int $code 返回的http状态码
+     * @return void
+     */
     protected function sendHttpOutput($response, $format = 'json', $code = 200) {
         if (is_array($format)) {
             $output_format = $format[1];
@@ -71,6 +116,13 @@ abstract class Service extends Controller_Abstract
         $content($sender);
     }
 
+    /**
+     * 设置标准响应http状态码
+     *
+     * @access protected
+     * @param int $code 返回的http状态码
+     * @return void
+     */
     protected function sendHttpCode($code = 200)
     {
         $sender = new SenderHttp();

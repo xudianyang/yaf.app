@@ -18,10 +18,29 @@ use Db\Sql\Sql;
 use Yaf\Registry;
 use Yaf\Config\Simple;
 
+/**
+ * Class Factory
+ *
+ * 全局工厂类
+ *
+ * @package Core
+ */
 abstract class Factory
 {
+    /**
+     * @var MemcachedResource
+     */
     static protected $memcached;
 
+    /**
+     * 根据全局或者模块配置实例化MemcachedResource对象
+     *
+     * @access public
+     * @param null $persistent_id
+     * @param array $config
+     * @return \Memcached
+     * @throws \MemcachedException
+     */
     static public function memcached($persistent_id = NULL, $config = array())
     {
         if (self::$memcached && self::$memcached instanceof MemcachedResource) {
@@ -68,6 +87,14 @@ abstract class Factory
         }
     }
 
+    /**
+     * 根据全局或者模块配置实例化数据操作对象
+     *
+     * @access public
+     * @param array $options
+     * @param string $name
+     * @return \Db\Adapter\AdapterInterface|null
+     */
     static public function db($options = array(), $name = AdapterPool::DEFAULT_ADAPTER) {
         if (AdapterPool::has($name)) {
             return AdapterPool::get($name);
@@ -88,6 +115,14 @@ abstract class Factory
         return AdapterPool::get();
     }
 
+    /**
+     * 根据数据库适配器返回表对象
+     *
+     * @access public
+     * @param $table
+     * @param Adapter $user_adapter
+     * @return Table
+     */
     static public function table($table, Adapter $user_adapter = null) {
         if (is_null($user_adapter)) {
             $user_adapter = self::db();
@@ -96,6 +131,13 @@ abstract class Factory
         return $table;
     }
 
+    /**
+     * 根据数据库适配器返回SQL对象
+     *
+     * @param Adapter $user_adapter
+     * @param null $table
+     * @return Sql
+     */
     static public function sql(Adapter $user_adapter = null, $table = null) {
         if (is_null($user_adapter)) {
             $user_adapter = self::db();

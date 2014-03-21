@@ -14,10 +14,23 @@ use Yaf\Controller_Abstract;
 use PhpSecure\Crypt\AES;
 use Exception as Exception;
 
+/**
+ * Class ServiceApi
+ *
+ * 导出API的controller基类
+ *
+ * @package Core
+ */
 abstract class ServiceApi extends Controller_Abstract
 {
+    /**
+     * @var string
+     */
     protected $_output_format;
 
+    /**
+     * ServiceApi初始化
+     */
     public function init()
     {
         Dispatcher::getInstance()->autoRender(true);
@@ -26,6 +39,14 @@ abstract class ServiceApi extends Controller_Abstract
         $this->_output_format = $this->getRequest()->getParam('format');
     }
 
+    /**
+     * 标准响应输出
+     *
+     * @access protected
+     * @param mixed $response
+     * @param string $format
+     * @return void
+     */
     protected function sendOutput($response, $format = '') {
         if (empty($format)) {
             if ($this->_output_format) {
@@ -60,6 +81,14 @@ abstract class ServiceApi extends Controller_Abstract
         $this->getResponse()->setBody($response, 'content');
     }
 
+    /**
+     * 标准响应错误输出
+     *
+     * @access protected
+     * @param mixed $error
+     * @param string $format
+     * @return void
+     */
     protected function getStderr($error, $format = '') {
         if (empty($format)) {
             if ($this->_output_format) {
@@ -95,16 +124,34 @@ abstract class ServiceApi extends Controller_Abstract
         return $error;
     }
 
+    /**
+     * 返回当前模块名
+     *
+     * @access protected
+     * @return string
+     */
     protected function getModule()
     {
         return $this->getRequest()->module;
     }
 
+    /**
+     * 返回当前控制器名
+     *
+     * @access protected
+     * @return string
+     */
     protected function getController()
     {
         return $this->getRequest()->controller;
     }
 
+    /**
+     * 返回当前动作名
+     *
+     * @access protected
+     * @return string
+     */
     protected function getAction()
     {
         return $this->getRequest()->action;

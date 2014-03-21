@@ -2,6 +2,8 @@
 /**
  * Yaf.app Framework
  *
+ * 程序入口（普通请求、API请求）
+ *
  * @author xudianyang<120343758@qq.com>
  * @copyright Copyright (c) 2014 (http://www.phpboy.net)
  */
@@ -24,8 +26,25 @@ use Resque\Resque;
 use Sender\Http as SenderHttp;
 
 if (substr($_SERVER['HTTP_USER_AGENT'], 0, 11) === 'PHP Yar Rpc') {
+    /*
+     * Yar_Server导出的API类
+     *
+     * 当请求通过Yar_Client进行远程调用时生效
+     *
+     * @package Global
+     */
     class Service
     {
+        /**
+         * 导出API的api方法
+         *
+         * @access public
+         * @param string $module 应用模块名
+         * @param string $controller 对应模块内的控制器
+         * @param string $action 对应控制器中的动作名
+         * @param mixed $parameters 请求传递的参数
+         * @return string API调用的响应正文
+         */
         public function api($module, $controller, $action, $parameters)
         {
             try {

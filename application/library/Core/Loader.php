@@ -10,9 +10,23 @@ namespace Core;
 
 use Yaf\Loader as InternalLoader;
 
-class Loader
+/**
+ * Class Loader
+ *
+ * 全局手工导入文件类
+ *
+ * @package Core
+ */
+final class Loader
 {
-    public static function lib($class_name)
+    /**
+     * 导入模块下lib目录下的文件
+     *
+     * @access public
+     * @param string $class_name 包含命名空间的类名称
+     * @return bool|void
+     */
+    static public function lib($class_name)
     {
         if (class_exists($class_name, false)) {
             return true;

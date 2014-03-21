@@ -480,7 +480,7 @@ worker进程在检测队列时，如果队列不为空，就会依次进行出�
 
 ######5.使用异常日志——触发异常
 
-./application/modules/Index/controllers/Index.php
+./application/modules/Demo/controllers/Index.php
 
 ```php
 <?php
@@ -500,7 +500,7 @@ class IndexController extends Controller_Abstract
         Dispatcher::getInstance()->disableView();
         $client = new YarClient(
             array(
-                'module' => 'index',
+                'module' => 'demo',
                 'controller' => 'demoapi',
                 'action' => 'getdata',
             ),
@@ -519,12 +519,12 @@ class IndexController extends Controller_Abstract
 
 看到testLogAction，当访问：
 
-http://backend.phpboy.net/index/index/testlog
+http://backend.phpboy.net/demo/index/testlog
 
 就会抛出异常，因为程序找不到与之对应的模板文件。
 
 ```
-Failed opening template /Users/xudianyang/PhpstormProjects/yaf.app-src/application/Modules/Index/Views/index/testlog.phtml: No such file or directory
+Failed opening template /Users/xudianyang/PhpstormProjects/yaf.app-src/application/Modules/Demo/Views/index/testlog.phtml: No such file or directory
 ```
 查看日志表，如果数据库连接信息配置得当，就会出现一条日志信息。
 
@@ -535,7 +535,7 @@ Failed opening template /Users/xudianyang/PhpstormProjects/yaf.app-src/applicati
 
 #####1.导出API
 
-./application/modules/Index/controllers/Demoapi.php
+./application/modules/Demo/controllers/Demoapi.php
 
 ```php
 <?php
@@ -560,7 +560,7 @@ class DemoApiController extends ServiceApi
 
 #####2.调用API
 
-./application/modules/Index/conrollers/Index.php
+./application/modules/Demo/conrollers/Index.php
 
 ```php
 <?php
@@ -580,7 +580,7 @@ class IndexController extends Controller_Abstract
         Dispatcher::getInstance()->disableView();
         $client = new YarClient(
             array(
-                'module' => 'index',
+                'module' => 'demo',
                 'controller' => 'demoapi',
                 'action' => 'getdata',
             ),
@@ -603,7 +603,7 @@ class IndexController extends Controller_Abstract
 
 ```php
 array(
-	'module' => 'index',
+	'module' => 'demo',
 	'controller' => 'demoapi',
 	'action' => 'getdata',
 )
@@ -615,7 +615,7 @@ array(
 
 最后调用Yar\YarClient类实例对象的api方法，完成请求并返回相应数据。
 
-访问：http://backend.phpboy.net/index/index/testyarapi
+访问：http://backend.phpboy.net/demo/index/testyarapi
 
 输出
 

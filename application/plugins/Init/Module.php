@@ -1,4 +1,16 @@
 <?php
+/**
+ * Yaf.app Framework
+ *
+ * Module.php
+ *
+ * 模块初始化插件，个性化模块配置
+ *
+ * @author xudianyang<120343758@qq.com>
+ * @copyright Copyright (c) 2014 (http://www.phpboy.net)
+ * @package Init
+ */
+
 namespace Init;
 
 use Yaf\Plugin_Abstract;
@@ -8,8 +20,20 @@ use Yaf\Registry;
 use Yaf\Config\Simple;
 use MountManager\MountManager;
 
+/**
+ * Class ModulePlugin
+ * @package Init
+ */
 class ModulePlugin extends Plugin_Abstract
 {
+    /**
+     * yaf路由分发之前触发，完成读取模块自定义配置
+     *
+     * @access public
+     * @param \Yaf\Request_Abstract $request
+     * @param \Yaf\Response_Abstract $response
+     * @return void
+     */
     public function preDispatch(Request_Abstract $request, Response_Abstract $response)
     {
         $module_dir = ROOT_PATH.DS.APP_NAME.DS.'modules'.DS.$request->module.DS;

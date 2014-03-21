@@ -1,4 +1,15 @@
 <?php
+/**
+ * Yaf.app Framework
+ *
+ * Bootstrap.php
+ *
+ * 应用引导文件，初始化插件及设置性能统计
+ *
+ * @author xudianyang<120343758@qq.com>
+ * @copyright Copyright (c) 2014 (http://www.phpboy.net)
+ * @package Global
+ */
 
 use Yaf\Application;
 use Yaf\Bootstrap_Abstract;
@@ -6,8 +17,22 @@ use Yaf\Dispatcher;
 use Init\ModulePlugin;
 use Init\XHProfPlugin;
 
-class Bootstrap extends Bootstrap_Abstract
+/**
+ * Yaf引导类 Class Bootstrap
+ *
+ * 应用所有需要尽早初始化的操作都需要在这里面定义并自动由yaf框架调用执行
+ *
+ * @package Global
+ */
+final class Bootstrap extends Bootstrap_Abstract
 {
+    /**
+     * 读取相应的配置初始化XHProf
+     *
+     * @access public
+     * @param \Yaf\Dispatcher $dispatcher
+     * @return void
+     */
     public function _initXHProf(Dispatcher $dispatcher)
     {
         if (isset(Application::app()->getConfig()->application->xhprof)) {
@@ -28,6 +53,13 @@ class Bootstrap extends Bootstrap_Abstract
         }
     }
 
+    /**
+     * 注册插件
+     *
+     * @access public
+     * @param Yaf\Dispatcher $dispatcher
+     * @return void
+     */
     public function _initPlugin(Dispatcher $dispatcher)
     {
         $dispatcher->registerPlugin(new XHProfPlugin());

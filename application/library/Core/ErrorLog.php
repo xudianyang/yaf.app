@@ -13,8 +13,21 @@ use Yaf\Request_Abstract;
 use Yaf\Application;
 use Resque\Resque;
 
+/**
+ * Class ErrorLog
+ *
+ * 日志队列能用类
+ *
+ * @package Core
+ */
 class ErrorLog
 {
+    /**
+     * 日志格式字符
+     *
+     * @access private
+     * @var array
+     */
     private $log_format_element = array(
         'h' => 'host',
         'u' => 'uri',
@@ -32,6 +45,13 @@ class ErrorLog
         'd' => 'datetime',
     );
 
+    /**
+     * 构造方法
+     *
+     * @access public
+     * @param Exception $e
+     * @param \Yaf\Request_Abstract $request
+     */
     public function __construct(Exception $e, Request_Abstract $request)
     {
         $this->host       = @$_SERVER['SERVER_NAME'];
@@ -57,6 +77,13 @@ class ErrorLog
         $this->timestamp  = time();
     }
 
+    /**
+     * 根据格式字符串，返回包含错误日志相应信息的数组格式
+     *
+     * @access public
+     * @param string $format
+     * @return array
+     */
     public function toArray($format = '')
     {
         if (empty($format)) {
@@ -77,6 +104,13 @@ class ErrorLog
         return $result;
     }
 
+    /**
+     * 根据格式字符串，返回包含错误日志相应信息的字符串
+     *
+     * @access public
+     * @param string $format
+     * @return string
+     */
     public function toString($format = '')
     {
         $log = $format;
@@ -88,6 +122,12 @@ class ErrorLog
         return $log;
     }
 
+    /**
+     * 异常日志入队列
+     *
+     * @access public
+     * @return void
+     */
     public function errorLog()
     {
         if (isset(Application::app()->getConfig()->application->queue)
