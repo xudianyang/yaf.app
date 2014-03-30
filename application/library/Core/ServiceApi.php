@@ -33,7 +33,6 @@ abstract class ServiceApi extends Controller_Abstract
      */
     public function init()
     {
-        Dispatcher::getInstance()->autoRender(true);
         Dispatcher::getInstance()->returnResponse(true);
         Dispatcher::getInstance()->disableView();
         $this->_output_format = $this->getRequest()->getParam('format');
@@ -87,7 +86,7 @@ abstract class ServiceApi extends Controller_Abstract
      * @access protected
      * @param mixed $error
      * @param string $format
-     * @return void
+     * @return mixed
      */
     protected function getStderr($error, $format = '') {
         if (empty($format)) {

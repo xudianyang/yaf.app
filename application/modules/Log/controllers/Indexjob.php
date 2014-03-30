@@ -18,7 +18,7 @@ use Log\LogModel;
  * Class IndexJobController
  * @package Log
  */
-class IndexJobController extends ServiceJob
+final class IndexJobController extends ServiceJob
 {
     /**
      * 初始化动作

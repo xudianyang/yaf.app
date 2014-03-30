@@ -16,7 +16,7 @@ use Resque\Resque;
 /**
  * Class ErrorLog
  *
- * 日志队列能用类
+ * 日志队列通用类
  *
  * @package Core
  */

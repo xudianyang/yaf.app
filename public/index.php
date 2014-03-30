@@ -25,7 +25,7 @@ use Exception as Exception;
 use Resque\Resque;
 use Sender\Http as SenderHttp;
 
-if (substr($_SERVER['HTTP_USER_AGENT'], 0, 11) === 'PHP Yar Rpc') {
+if (isset($_SERVER['HTTP_USER_AGENT']) && substr($_SERVER['HTTP_USER_AGENT'], 0, 11) === 'PHP Yar Rpc') {
     /*
      * Yar_Server导出的API类
      *

@@ -8,6 +8,7 @@
 
 namespace Cache\Storage;
 
+use Cache\Exception;
 
 interface StorageInterface
 {
@@ -65,4 +66,15 @@ interface StorageInterface
 	 */
 	public function decrement($key, $value);
 
+    /**
+     * @param array|\ArrayAccess|RedisSource $resource
+     * @return void
+     */
+    public function setResource($resource);
+
+    /**
+     * @return RedisSource
+     * @throws Exception\RuntimeException
+     */
+    public function getResource();
 }
