@@ -84,7 +84,7 @@ abstract class Service extends Controller_Abstract
      * 标准响应输出
      *
      * @access protected
-     * @param $response 响应正文
+     * @param $response string 响应正文
      * @param string $format 响应输出数据格式
      * @param int $code 返回的http状态码
      * @return void

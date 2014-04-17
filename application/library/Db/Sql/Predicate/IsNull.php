@@ -1,8 +1,9 @@
 <?php
 /**
- * Api.cloud
+ * Yaf.app Framework
  *
- * @copyright Copyright (c) 2013 Beijing CmsTop Technology Co.,Ltd. (http://www.cmstop.com)
+ * @author xudianyang<120343758@qq.com>
+ * @copyright Copyright (c) 2014 (http://www.phpboy.net)
  */
 
 namespace Db\Sql\Predicate;

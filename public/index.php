@@ -87,4 +87,3 @@ if (isset($_SERVER['HTTP_USER_AGENT']) && substr($_SERVER['HTTP_USER_AGENT'], 0,
         }
     }
 }
-
