@@ -151,7 +151,6 @@ class Resque
         foreach($queues AS $queue) {
             $list[] = 'queue:' . $queue;
         }
-
         $item = self::redis()->blpop($list, (int)$timeout);
 
         if(!$item) {

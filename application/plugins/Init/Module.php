@@ -61,4 +61,5 @@ class ModulePlugin extends Plugin_Abstract
             Registry::set("mount", $mount);
         } while(0);
     }
+
 }

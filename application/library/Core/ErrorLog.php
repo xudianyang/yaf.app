@@ -134,14 +134,16 @@ class ErrorLog
             && isset(Application::app()->getConfig()->application->queue->redis)
             && isset(Application::app()->getConfig()->application->queue->log)
         ) {
-            $redis_config = Application::app()->getConfig()->application->queue->redis->toArray();
+            $queue = Application::app()->getConfig()->application->queue->toArray();
+
+            $redis_config = $queue['redis'];
             $server   = $redis_config['host'] . ':'. $redis_config['port'];
             $database = isset($redis_config['database']) ? $redis_config['database'] : null;
             Resque::setBackend($server, $database);
             $args = array(
-                'module'     => Application::app()->getConfig()->application->queue->log->module,
-                'controller' => Application::app()->getConfig()->application->queue->log->controller,
-                'action'     => Application::app()->getConfig()->application->queue->log->action,
+                'module'     => $queue['log']['module'],
+                'controller' => $queue['log']['controller'],
+                'action'     => $queue['log']['action'],
                 'args'       => $this->toArray(),
             );
             $queue_name = Application::app()->getConfig()->application->queue->log->name;

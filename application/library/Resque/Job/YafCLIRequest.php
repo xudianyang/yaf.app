@@ -24,10 +24,7 @@ class YafCLIRequest
             $request = new RequestSimple('CLI', $this->args['module'], $this->args['controller'], $this->args['action'], $this->args['args']);
             $app->bootstrap()->getDispatcher()->dispatch($request);
         } catch(Exception $e) {
-            if (Application::app()->getConfig()->application->queue->log->switch) {
-                $error = new ErrorLog($e, Dispatcher::getInstance()->getRequest());
-                $error->errorLog();
-            }
+            exit(1);
         }
     }
 }

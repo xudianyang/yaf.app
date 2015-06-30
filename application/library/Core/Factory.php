@@ -112,7 +112,7 @@ abstract class Factory
 
         $adapter = new Adapter($options);
         AdapterPool::register($adapter);
-        return AdapterPool::get();
+        return AdapterPool::get($name);
     }
 
     /**

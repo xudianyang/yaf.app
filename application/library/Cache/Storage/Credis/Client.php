@@ -11,6 +11,7 @@ namespace Cache\Storage\Credis;
 use Cache\Storage\Credis\Exception\CredisException;
 use Exception as Exception;
 use Redis as Redis;
+use RedisException;
 /**
  * Credis_Client (a fork of Redisent)
  *

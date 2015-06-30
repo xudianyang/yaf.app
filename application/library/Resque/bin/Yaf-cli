@@ -2,7 +2,7 @@
 <?php
 define('DS',            '/');
 define('APP_NAME',      'application');
-define('ROOT_PATH',     '/Users/xudianyang/PhpstormProjects/yaf.app-src');
+define('ROOT_PATH',     '/Users/xudianyang/GIT/Personal/PHP/yaf.app-src');
 define('INI_PATH',      ROOT_PATH.DS.'conf'.DS.'app.ini');
 
 define('ASSETS_URL',    'http://assets.phpboy.net/');
@@ -41,10 +41,6 @@ for ($i = 0; $i < $num_params; $i+=2) {
     $run_params[$param] = $params[$i + 1];
 }
 
-if (empty($run_params['queue'])) {
-    $run_params['queue'] = '*';
-}
-
 $run_params['host']      = isset($run_params['host']) ? $run_params['host'] : '127.0.0.1';
 $run_params['port']      = isset($run_params['port']) ? (int)$run_params['port'] : '6379';
 $run_params['database']  = isset($run_params['database']) ? (int)$run_params['database'] : 0;
@@ -70,6 +66,13 @@ function start()
     if (isset($prefix)) {
         $logger->log(LogLevel::INFO, 'Prefix Set To {prefix}', array('prefix' => $prefix));
         Redis::prefix($prefix);
+    }
+
+    if (empty($queue)) {
+        $logger->log(LogLevel::EMERGENCY, 'Queue Name Not Set');
+        $result = 'Running Error!';
+        echo $result, "\n";
+        return;
     }
 
     for ($i = 0; $i < $process; ++$i) {

@@ -14,6 +14,7 @@ use Resque\Resque\Job\Status;
 use Resque\Resque\Job\DirtyExitException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Cache\Storage\Credis\Exception\CredisException;
 /**
  * Resque worker that handles checking queues for jobs, fetching them
  * off the queues, running them and handling the result.
@@ -178,7 +179,11 @@ class Worker
 					$this->updateProcLine('Waiting for ' . implode(',', $this->queues) . ' with interval ' . $interval);
 				}
 
-				$job = $this->reserve($blocking, $interval);
+                try {
+                    $job = $this->reserve($blocking, $interval);
+                } catch(CredisException $e) {
+                    continue;
+                }
 			}
 
 			if(!$job) {

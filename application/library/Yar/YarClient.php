@@ -54,7 +54,7 @@ class YarClient
 
     public function __call($method, $parameters = array())
     {
-        $params  = array_merge($this->_parameters, $parameters);
+        $params  = array_merge($this->_parameters, $parameters[0]);
         $result  = call_user_func(array($this->_client, $method), $this->_module, $this->_controller, $this->_action, $params);
         if (!$result) {
             return null;
